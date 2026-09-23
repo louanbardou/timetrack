@@ -20,6 +20,8 @@ classification, storage - runs on your machine.
   for a deeper look
 - Auto-starts at login, auto-restarts if it crashes, keeps running even if
   you accidentally close the widget
+- **Daily automated backups** of your activity database (see Data resilience
+  below)
 
 ## Requirements
 
@@ -87,7 +89,38 @@ it's a source file, not something Preferences writes to.
 | `tracker.py` | Menu bar app - the main process, runs the capture loop |
 | `widget.py` | Floating widget - runs as its own process |
 | `dashboard.py` | Generates the full HTML dashboard |
+| `preferences.py` | Category editor window (menu bar > Preferences…) |
+| `backup.py` | Daily database backup + integrity check |
 | `setup.sh` | Installer |
+
+## Data resilience
+
+Your activity history lives in one SQLite file: `activity.db`. What's
+protected, and what isn't:
+
+- **Crash/power-loss safe**: the database runs in WAL mode. A crash mid-write
+  loses at most the one sample being written (a few seconds), never anything
+  already committed.
+- **Daily backups**: a separate LaunchAgent (`com.timetrack.local.backup`)
+  runs `backup.py` once at login and every day at 3am. It runs a
+  `PRAGMA integrity_check` first, then takes a live, consistent snapshot
+  (via SQLite's own backup API, not a raw file copy) into `backups/`,
+  keeping the last 30 days and deleting older ones. Check `backup.log` for
+  history.
+- **What's still NOT protected**: everything lives on one disk. `backups/`
+  is on the same machine as `activity.db` - a stolen laptop, a dead drive,
+  or `rm -rf ~/timetrack` takes both out at once. If you want real
+  disaster-proofing, point `backups/` at an external drive or a synced
+  folder (iCloud Drive, Dropbox) - that's a deliberate choice to make
+  yourself, since it means your activity history leaves this machine.
+
+To restore from a backup:
+
+```bash
+launchctl bootout gui/$(id -u)/com.timetrack.local
+cp ~/timetrack/backups/activity-YYYY-MM-DD.db ~/timetrack/activity.db
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.timetrack.local.plist
+```
 
 ## Uninstall
 

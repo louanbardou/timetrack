@@ -22,6 +22,10 @@ CREATE INDEX IF NOT EXISTS idx_activity_category ON activity(category_id);
 @contextmanager
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
+    # WAL is more resilient than the default rollback journal (better
+    # crash/power-loss behavior, and lets the widget read without blocking
+    # on the tracker's writes).
+    conn.execute("PRAGMA journal_mode=WAL;")
     try:
         yield conn
     finally:

@@ -89,6 +89,50 @@ PLIST
 launchctl bootout "gui/$(id -u)/${PLIST_LABEL}" >/dev/null 2>&1 || true
 launchctl bootstrap "gui/$(id -u)" "$PLIST_PATH"
 
+# --- 7. LaunchAgent: daily database backup ----------------------------------
+echo "==> Installing the daily backup LaunchAgent..."
+BACKUP_LABEL="${PLIST_LABEL}.backup"
+BACKUP_PLIST_PATH="$HOME/Library/LaunchAgents/${BACKUP_LABEL}.plist"
+cat > "$BACKUP_PLIST_PATH" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>${BACKUP_LABEL}</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>${PROJECT_DIR}/venv/bin/python</string>
+        <string>${PROJECT_DIR}/backup.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>${PROJECT_DIR}</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>${PROJECT_DIR}/backup.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>${PROJECT_DIR}/backup.err.log</string>
+</dict>
+</plist>
+PLIST
+
+launchctl bootout "gui/$(id -u)/${BACKUP_LABEL}" >/dev/null 2>&1 || true
+launchctl bootstrap "gui/$(id -u)" "$BACKUP_PLIST_PATH"
+
 echo ""
 echo "==> Done. TimeTrack is running."
 echo ""
@@ -105,5 +149,7 @@ echo ""
 echo "Look for the 'TT' icon in your menu bar, and a small floating widget"
 echo "in the top-right corner of your screen."
 echo ""
-echo "To edit your categories, see config.py (CATEGORIES list) and re-run"
-echo "the kickstart command above to apply changes."
+echo "To edit your categories, use Preferences... from the menu bar icon."
+echo ""
+echo "Your activity database is backed up daily at 3am (and once now) to"
+echo "${PROJECT_DIR}/backups/ - last 30 days are kept."

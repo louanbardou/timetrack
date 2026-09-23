@@ -6,3 +6,7 @@ categories.json
 dashboard.html
 tracker.out.log
 tracker.err.log
+backups/
+backup.log
+backup.out.log
+backup.err.log
