@@ -2,6 +2,7 @@ venv/
 __pycache__/
 *.pyc
 activity.db
+categories.json
 dashboard.html
 tracker.out.log
 tracker.err.log

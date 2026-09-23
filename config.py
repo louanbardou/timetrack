@@ -1,8 +1,18 @@
-"""Configuration: categories, colors, model names, capture interval."""
+"""Configuration: categories, colors, model names, capture interval.
+
+Categories are user-editable at runtime via the Preferences window (see
+preferences.py), which reads/writes CATEGORIES_JSON_PATH. The list below is
+only the seed used the very first time that file doesn't exist yet - after
+that, the JSON file is the source of truth.
+"""
+import json
+import os
+
+CATEGORIES_JSON_PATH = os.path.expanduser("~/timetrack/categories.json")
 
 # Each category: (label, description used in the classifier prompt, palette color)
 # Colors from the validated categorical palette (dataviz skill reference), slots 1-6.
-CATEGORIES = [
+_SEED_CATEGORIES = [
     {
         "id": "emails_slack",
         "label": "Emails/Slack/Messages",
@@ -100,6 +110,7 @@ APP_OVERRIDES = {
 }
 
 # Fallback bucket when the classifier can't confidently assign one of the above.
+# Not user-deletable in the Preferences window - always kept present on load.
 OTHER_CATEGORY = {
     "id": "autre",
     "label": "Autre",
@@ -108,8 +119,39 @@ OTHER_CATEGORY = {
     "color_dark": "#898781",
 }
 
-ALL_CATEGORIES = CATEGORIES + [OTHER_CATEGORY]
+
+def load_categories():
+    """Load categories from disk, seeding the file on first run. Always
+    guarantees the 'autre' fallback bucket is present, even if the JSON file
+    was hand-edited or corrupted into missing it."""
+    if os.path.exists(CATEGORIES_JSON_PATH):
+        try:
+            with open(CATEGORIES_JSON_PATH) as f:
+                cats = json.load(f)
+        except Exception:
+            cats = _SEED_CATEGORIES + [OTHER_CATEGORY]
+    else:
+        cats = _SEED_CATEGORIES + [OTHER_CATEGORY]
+        save_categories(cats)
+
+    if not any(c["id"] == "autre" for c in cats):
+        cats = cats + [OTHER_CATEGORY]
+    return cats
+
+
+def save_categories(cats):
+    os.makedirs(os.path.dirname(CATEGORIES_JSON_PATH), exist_ok=True)
+    with open(CATEGORIES_JSON_PATH, "w") as f:
+        json.dump(cats, f, indent=2)
+
+
+ALL_CATEGORIES = load_categories()
 CATEGORY_IDS = [c["id"] for c in ALL_CATEGORIES]
+
+# Drop overrides that point at a category the user has since deleted or
+# renamed (id changed) in the Preferences window, so a stale mapping can't
+# return an id that no longer exists.
+APP_OVERRIDES = {k: v for k, v in APP_OVERRIDES.items() if v in CATEGORY_IDS}
 
 # Confidence below this triggers a vision fallback pass (if enabled) instead of
 # trusting the text-only classification.
@@ -127,5 +169,4 @@ DEFAULT_INTERVAL_SECONDS = 15
 OCR_TEXT_MAX_CHARS = 800
 
 # SQLite DB path
-import os
 DB_PATH = os.path.expanduser("~/timetrack/activity.db")

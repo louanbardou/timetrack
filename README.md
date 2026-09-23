@@ -53,15 +53,18 @@ launchctl kickstart -k gui/$(id -u)/com.timetrack.local
 
 ## Customizing categories
 
-Edit `CATEGORIES` in `config.py`. Each entry needs an `id`, `label`,
-`description` (used to prompt the classifier - be specific, this is what
-the model reads), and a light/dark color pair.
+Use **Preferences…** from the menu bar - add, rename, recolor, or delete
+categories, and edit each one's description (this is the text the local
+model reads to decide, so be specific about what does and doesn't count).
+Saving restarts the tracker automatically so changes apply immediately.
+Categories are stored in `categories.json` (created on first run, gitignored
+since it's per-user state, not source).
 
 For apps that are unambiguous (an IDE, a calling app, a messaging app), add
-them to `APP_OVERRIDES` in the same file - this skips the LLM entirely for
-that app, which is both instant and immune to misclassification.
-
-After editing, restart with the `launchctl kickstart` command above.
+them to `APP_OVERRIDES` in `config.py` - this skips the LLM entirely for
+that app, which is both instant and immune to misclassification. Restart
+with the `launchctl kickstart` command above after editing this one, since
+it's a source file, not something Preferences writes to.
 
 ## Menu bar controls
 

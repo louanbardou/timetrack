@@ -8,6 +8,7 @@ import time
 
 import webview
 import AppKit
+from PyObjCTools import AppHelper
 
 import aggregate
 import db
@@ -27,6 +28,25 @@ def screen_size():
 def top_right_position(width):
     screen_w, _ = screen_size()
     return screen_w - width - MARGIN, MARGIN
+
+
+def make_always_visible(window):
+    """Join every Space, including full-screen ones, so the widget stays
+    visible no matter what's in front. Must run on the main thread - pywebview
+    fires window.events.shown off the main thread, and calling AppKit methods
+    from there crashes (confirmed: SIGTRAP), so this is scheduled via
+    AppHelper.callAfter rather than called directly."""
+    def _apply():
+        try:
+            behavior = (
+                AppKit.NSWindowCollectionBehaviorCanJoinAllSpaces
+                | AppKit.NSWindowCollectionBehaviorFullScreenAuxiliary
+                | AppKit.NSWindowCollectionBehaviorStationary
+            )
+            window.native.setCollectionBehavior_(behavior)
+        except Exception:
+            pass
+    AppHelper.callAfter(_apply)
 
 
 class Api:
@@ -240,6 +260,7 @@ def main():
         js_api=api,
     )
     api.window = window
+    window.events.shown += lambda: make_always_visible(window)
     threading.Thread(target=refresh_loop, args=(window,), daemon=True).start()
     webview.start()
 

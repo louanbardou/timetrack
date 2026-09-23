@@ -19,6 +19,7 @@ from dashboard import generate_dashboard
 INTERVAL_CHOICES = [10, 15, 20, 30, 60]
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 WIDGET_SCRIPT = os.path.join(PROJECT_DIR, "widget.py")
+PREFERENCES_SCRIPT = os.path.join(PROJECT_DIR, "preferences.py")
 
 
 class TimeTrackApp(rumps.App):
@@ -47,6 +48,7 @@ class TimeTrackApp(rumps.App):
             None,
             self.widget_item,
             rumps.MenuItem("Open Full Dashboard", callback=self.open_dashboard),
+            rumps.MenuItem("Preferences…", callback=self.open_preferences),
             None,
             rumps.MenuItem("Quit", callback=self.quit_app),
         ]
@@ -82,6 +84,16 @@ class TimeTrackApp(rumps.App):
         if self.widget_wanted and (self.widget_proc is None or self.widget_proc.poll() is not None):
             self.widget_proc = subprocess.Popen([sys.executable, WIDGET_SCRIPT])
 
+    def keep_menubar_icon_visible(self):
+        """Modern macOS (Ventura+) lets the user - or a stray right-click -
+        toggle any status item off via 'Remove from Menu Bar', which hides it
+        without killing the process. Re-assert visible=True on every tick so
+        that state can't stick even if it happens."""
+        try:
+            self._nsapp.nsstatusitem.setVisible_(True)
+        except Exception:
+            pass
+
     def make_interval_setter(self, secs):
         def _set(sender):
             self.interval = secs
@@ -106,12 +118,16 @@ class TimeTrackApp(rumps.App):
         path = generate_dashboard()
         subprocess.run(["open", path])
 
+    def open_preferences(self, sender):
+        subprocess.Popen([sys.executable, PREFERENCES_SCRIPT])
+
     def quit_app(self, sender):
         self.stop_widget()
         rumps.quit_application()
 
     def tick(self, sender):
         self.watchdog_widget()
+        self.keep_menubar_icon_visible()
         if self.busy:
             return
         self.busy = True
