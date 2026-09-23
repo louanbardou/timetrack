@@ -142,7 +142,7 @@ class TimeTrackApp(rumps.App):
             delete_screenshot(screenshot_path)
 
             ts_iso = datetime.now(timezone.utc).astimezone().isoformat()
-            db.insert_sample(ts_iso, self.interval, app, title, cat_id, conf, used_vision)
+            db.insert_sample(ts_iso, self.interval, app, title, cat_id, conf, used_vision, ocr_text[:300])
 
             label = next((c["label"] for c in config.ALL_CATEGORIES if c["id"] == cat_id), cat_id)
             self.status_item.title = f"{label} ({conf:.0%}){' (vision)' if used_vision else ''}"

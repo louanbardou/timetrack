@@ -16,7 +16,12 @@ _SEED_CATEGORIES = [
     {
         "id": "emails_slack",
         "label": "Emails/Slack/Messages",
-        "description": "Reading or writing email, Slack, Messages, Discord, any chat/messaging app or webmail.",
+        "description": (
+            "The active app or page IS an email/chat interface itself (Slack, Messages, Discord, "
+            "WhatsApp, Gmail/Outlook inbox view). Do NOT choose this just because a 'Gmail' or mail "
+            "icon appears somewhere in a page's navigation bar (e.g. Google's top-right account menu "
+            "on any google.com page) - that is just page furniture, not the actual activity."
+        ),
         "color_light": "#2a78d6",
         "color_dark": "#3987e5",
     },
@@ -37,7 +42,13 @@ _SEED_CATEGORIES = [
     {
         "id": "investissement",
         "label": "Investissement/Capitalisation",
-        "description": "Personal finance, investing, trading platforms, portfolio tracking, market research, crypto, real estate or business capitalization work.",
+        "description": (
+            "Personal finance, investing, trading platforms, portfolio tracking, market research, "
+            "crypto, real estate or business capitalization work. This includes web searches and "
+            "articles about investing or real estate (e.g. a Google search for 'investir en "
+            "immobilier') even if the page is technically a search engine or browser - the topic of "
+            "the content is what matters here."
+        ),
         "color_light": "#eda100",
         "color_dark": "#c98500",
     },

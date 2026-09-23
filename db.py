@@ -18,6 +18,19 @@ CREATE INDEX IF NOT EXISTS idx_activity_ts ON activity(ts);
 CREATE INDEX IF NOT EXISTS idx_activity_category ON activity(category_id);
 """
 
+# Added after the original schema shipped - kept as a migration so existing
+# databases (with real history) don't need to be recreated.
+MIGRATIONS = [
+    ("ocr_snippet", "ALTER TABLE activity ADD COLUMN ocr_snippet TEXT"),
+]
+
+
+def _migrate(conn):
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(activity)")}
+    for col_name, ddl in MIGRATIONS:
+        if col_name not in existing:
+            conn.execute(ddl)
+
 
 @contextmanager
 def get_conn():
@@ -35,15 +48,16 @@ def get_conn():
 def init_db():
     with get_conn() as conn:
         conn.executescript(SCHEMA)
+        _migrate(conn)
         conn.commit()
 
 
-def insert_sample(ts_iso, interval_seconds, app, window_title, category_id, confidence, used_vision=False):
+def insert_sample(ts_iso, interval_seconds, app, window_title, category_id, confidence, used_vision=False, ocr_snippet=None):
     with get_conn() as conn:
         conn.execute(
-            "INSERT INTO activity (ts, interval_seconds, app, window_title, category_id, confidence, used_vision) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (ts_iso, interval_seconds, app, window_title, category_id, confidence, int(used_vision)),
+            "INSERT INTO activity (ts, interval_seconds, app, window_title, category_id, confidence, used_vision, ocr_snippet) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (ts_iso, interval_seconds, app, window_title, category_id, confidence, int(used_vision), ocr_snippet),
         )
         conn.commit()
 
